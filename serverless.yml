@@ -1,0 +1,46 @@
+frameworkVersion: ">= 3"
+
+service: sls-ts-starter
+
+useDotenv: true
+
+package:
+  patterns:
+    - '!src/**'
+    - '!**/node_modules/aws-sdk/**'
+    - '!**/node_modules/@types/**'
+
+custom:
+  build: npm run ${env:SLS_BUILD, 'build'}
+
+  scriptHooks:
+    'deploy:function:initialize': ${self:custom.build}
+    'package:initialize': ${self:custom.build}
+    'invoke:local:loadEnvVars': ${self:custom.build}
+
+  stage: ${opt:stage, env:STAGE, self:provider.stage}
+
+plugins:
+  - serverless-scriptable-plugin
+
+provider:
+  name: aws
+
+  apiGateway:
+    shouldStartNameWithService: true
+    minimumCompressionSize: 1024
+
+  runtime: nodejs14.x
+
+  memorySize: 128
+
+  environment:
+    ENV: ${env:ENV}
+
+functions:
+  TestGet:
+    handler: dist/handler/test/get.handle
+    events:
+      - http:
+          path: test
+          method: get
